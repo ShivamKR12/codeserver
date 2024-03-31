@@ -1,7 +1,7 @@
 - 👋 Hi, I’m Shivam
 - 👀 I’m interested in programing
 - 🌱 I’m currently learning python
-- 💞️ I’m looking to collaborate on all my prjects
+- 💞️ I’m looking to collaborate on all my projects
 - 📫 How to reach me :reach me on github
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
