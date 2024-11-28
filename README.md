@@ -1,11 +1,10 @@
 **Setting Up Jupyter Lab on Google Colab**
 
-This guide will walk you through the steps to set up Jupyter Lab with necessary extensions, GPU support, and expose it using ngrok on Google Colab.
+This guide will walk you through the steps to set up Jupyter Lab with necessary extensions, GPU support, and expose it using Cloudflare on Google Colab.
 
 **Requirements**
 
 Google Colab environment
-ngrok account with an authentication token
 
 **Steps**
 
@@ -14,9 +13,10 @@ ngrok account with an authentication token
 First, install Jupyter Lab and other required packages:
 `!pip install jupyterlab jupyterlab-code-formatter jupyterlab-lsp python-lsp-server[all]`
 
-**Step 2: Install ngrok to Expose the Jupyter Lab Server**
+**Step 2: Install Cloudflare to Expose the Jupyter Lab Server**
 
-`!pip install pyngrok`
+`!wget -P ~ https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb`
+`!dpkg -i ~/cloudflared-linux-amd64.deb`
 
 **Step 3: Install Jupyter Lab Extensions**
 
@@ -72,22 +72,35 @@ c.NotebookApp.shutdown_no_activity_timeout = 3600
 c.NotebookApp.terminals_enabled = True
 """)`
 
-**Step 8: Start ngrok**
+**Step 8: Start Cloudflare**
 
-Authenticate ngrok with your authtoken and set up a tunnel for the Jupyter Lab server:
+Set up a tunnel for the Jupyter Lab server:
 
-`from pyngrok import ngrok
+`import subprocess
+import threading
+import time
+import socket
 
-# Authenticate ngrok with your authtoken
-ngrok.set_auth_token("YOUR_NGROK_AUTH_TOKEN")
+def iframe_thread(port):
+    while True:
+        time.sleep(0.5)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port))
+        if result == 0:
+            break
+        sock.close()
+    
+    print("\nJupyter Lab finished loading, trying to launch cloudflared...\n")
 
-# Kill any previous ngrok sessions if running
-ngrok.kill()
+    # Start Cloudflare tunnel
+    p = subprocess.Popen(["cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for line in p.stderr:
+        l = line.decode()
+        if "trycloudflare.com" in l:
+            print("This is the URL to access Jupyter Lab:", l[l.find("http"):], end='')
 
-# Set up a tunnel for the Jupyter Lab server
-public_url = ngrok.connect(8888)
-print(f"Jupyter Lab public URL: {public_url}")`
-
+# Start the thread to monitor Jupyter Lab
+threading.Thread(target=iframe_thread, daemon=True, args=(8888,)).start()`
 
 **Step 9: Start Jupyter Lab Server**
 
